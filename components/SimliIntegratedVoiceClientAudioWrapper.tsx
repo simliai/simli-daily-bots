@@ -4,7 +4,8 @@ import { SimliClient } from 'simli-client';
 
 const simli_faceid = '88109f93-40ce-45b8-b310-1473677ddde2';
 const BUFFER_SIZE = 1024*4; // Adjust this value as needed
-const SAMPLE_RATE = 48000; // Adjust to match your audio sample rate
+const SAMPLE_RATE = 41000; // Original sample rate
+const TARGET_SAMPLE_RATE = 16000; // Target sample rate
 
 const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   const botAudioRef = useRef<HTMLAudioElement>(null);
@@ -13,8 +14,6 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   const botAudioTrack = useVoiceClientMediaTrack("audio", "bot");
   const [simliClient, setSimliClient] = useState<SimliClient | null>(null);
   const [isSimliInitialized, setIsSimliInitialized] = useState(false);
-  const audioBufferRef = useRef<Int16Array>(new Int16Array(BUFFER_SIZE));
-  const bufferIndexRef = useRef<number>(0);
 
   useEffect(() => {
     if (videoRef.current && simliAudioRef.current && !isSimliInitialized) {
@@ -54,14 +53,40 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
     const sourceNode = audioContext.createMediaStreamSource(new MediaStream([botAudioTrack]));
 
     let audioWorklet: AudioWorkletNode;
-    
+
     const initializeAudioWorklet = async () => {
       await audioContext.audioWorklet.addModule(URL.createObjectURL(new Blob([`
         class AudioProcessor extends AudioWorkletProcessor {
           constructor() {
             super();
+            this.inputSampleRate = ${SAMPLE_RATE};
+            this.outputSampleRate = ${TARGET_SAMPLE_RATE};
             this.buffer = new Int16Array(${BUFFER_SIZE});
             this.bufferIndex = 0;
+          }
+
+          downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
+            if (outputSampleRate === inputSampleRate) {
+              return buffer;
+            }
+            const sampleRateRatio = inputSampleRate / outputSampleRate;
+            const newLength = Math.round(buffer.length / sampleRateRatio);
+            const result = new Int16Array(newLength);
+            let offsetResult = 0;
+            let offsetBuffer = 0;
+
+            while (offsetResult < result.length) {
+              const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+              let accum = 0, count = 0;
+              for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+                accum += buffer[i];
+                count++;
+              }
+              result[offsetResult] = Math.max(-32768, Math.min(32767, Math.floor(accum / count)));
+              offsetResult++;
+              offsetBuffer = nextOffsetBuffer;
+            }
+            return result;
           }
 
           process(inputs, outputs, parameters) {
@@ -74,7 +99,8 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
                 this.bufferIndex++;
 
                 if (this.bufferIndex === this.buffer.length) {
-                  this.port.postMessage(this.buffer);
+                  const downsampledBuffer = this.downsampleBuffer(this.buffer, this.inputSampleRate, this.outputSampleRate);
+                  this.port.postMessage(downsampledBuffer);
                   this.bufferIndex = 0;
                 }
               }
