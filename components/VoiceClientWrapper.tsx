@@ -50,7 +50,7 @@ export default function VoiceClientWrapper({ children }) {
                       content: [
                         {
                           type: "text",
-                          text: "You are Marie Curie, you do not speak verbosely."
+                          text: "You are Marie Curie..."
                         }
                       ]
                     }
