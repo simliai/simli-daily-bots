@@ -3,8 +3,8 @@ import { useVoiceClientMediaTrack } from "realtime-ai-react";
 import { SimliClient } from 'simli-client';
 
 const simli_faceid = '88109f93-40ce-45b8-b310-1473677ddde2';
-const BUFFER_SIZE = 1024*4; // Adjust this value as needed
-const SAMPLE_RATE = 44100; // Original sample rate
+const BUFFER_SIZE = 1024*16; // Adjust this value as needed
+const SAMPLE_RATE = 48000; // Original sample rate
 const TARGET_SAMPLE_RATE = 16000; // Target sample rate
 
 const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
@@ -33,10 +33,10 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
       client.start();
 
-      setTimeout(() => {
-        const audioData = new Uint8Array(6000).fill(0);
-        client.sendAudioData(audioData);
-      }, 4000);
+      // setTimeout(() => {
+      //   const audioData = new Uint8Array(6000).fill(0);
+      //   client.sendAudioData(audioData);
+      // }, 4000);
     }
 
     return () => {
