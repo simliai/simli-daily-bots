@@ -31,8 +31,12 @@ export default function VoiceClientWrapper({ children }) {
               options: [
                 {
                   name: "voice",
-                  value: "79a125e8-cd45-4c13-8a67-188112f4dd22"
-                }
+                  value: "79a125e8-cd45-4c13-8a67-188112f4dd22",
+                },
+                {
+                  name: "sampleRate", 
+                  value: 16000
+                },
               ]
             },
             {

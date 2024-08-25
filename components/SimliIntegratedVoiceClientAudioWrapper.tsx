@@ -3,9 +3,8 @@ import { useVoiceClientMediaTrack } from "realtime-ai-react";
 import { SimliClient } from 'simli-client';
 
 const simli_faceid = '88109f93-40ce-45b8-b310-1473677ddde2';
-const BUFFER_SIZE = 6000*3;
-const SAMPLE_RATE = 48000;
-const TARGET_SAMPLE_RATE = 16000;
+const BUFFER_SIZE = 6000;
+const SAMPLE_RATE = 16000;
 
 // Helper function to save audio data to a file
 const saveAudioToFile = (audioData: Float32Array | Int16Array, sampleRate: number, filename: string) => {
@@ -99,42 +98,15 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
     const sourceNode = audioContext.createMediaStreamSource(new MediaStream([botAudioTrack]));
 
     let audioWorklet: AudioWorkletNode;
-    let rawAudioBuffer: Float32Array[] = [];
-    let processedAudioBuffer: Int16Array[] = [];
+    let audioBuffer: Int16Array[] = [];
 
     const initializeAudioWorklet = async () => {
       await audioContext.audioWorklet.addModule(URL.createObjectURL(new Blob([`
         class AudioProcessor extends AudioWorkletProcessor {
           constructor() {
             super();
-            this.inputSampleRate = ${SAMPLE_RATE};
-            this.outputSampleRate = ${TARGET_SAMPLE_RATE};
             this.buffer = new Int16Array(${BUFFER_SIZE});
             this.bufferIndex = 0;
-          }
-
-          downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
-            if (outputSampleRate === inputSampleRate) {
-              return buffer;
-            }
-            const sampleRateRatio = inputSampleRate / outputSampleRate;
-            const newLength = Math.round(buffer.length / sampleRateRatio);
-            const result = new Int16Array(newLength);
-            let offsetResult = 0;
-            let offsetBuffer = 0;
-
-            while (offsetResult < result.length) {
-              const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-              let accum = 0, count = 0;
-              for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-                accum += buffer[i];
-                count++;
-              }
-              result[offsetResult] = Math.max(-32768, Math.min(32767, Math.round(accum / count)));
-              offsetResult++;
-              offsetBuffer = nextOffsetBuffer;
-            }
-            return result;
           }
 
           process(inputs, outputs, parameters) {
@@ -142,16 +114,12 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
             const inputChannel = input[0];
 
             if (inputChannel) {
-              // Send raw audio data to main thread
-              this.port.postMessage({type: 'rawAudio', data: inputChannel});
-
               for (let i = 0; i < inputChannel.length; i++) {
                 this.buffer[this.bufferIndex] = Math.max(-32768, Math.min(32767, Math.round(inputChannel[i] * 32767)));
                 this.bufferIndex++;
 
                 if (this.bufferIndex === this.buffer.length) {
-                  const downsampledBuffer = this.downsampleBuffer(this.buffer, this.inputSampleRate, this.outputSampleRate);
-                  this.port.postMessage({type: 'processedAudio', data: downsampledBuffer});
+                  this.port.postMessage({type: 'audioData', data: this.buffer});
                   this.bufferIndex = 0;
                 }
               }
@@ -169,12 +137,10 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
       audioWorklet.connect(audioContext.destination);
 
       audioWorklet.port.onmessage = (event) => {
-        if (event.data.type === 'rawAudio') {
-          rawAudioBuffer.push(new Float32Array(event.data.data));
-        } else if (event.data.type === 'processedAudio') {
-          processedAudioBuffer.push(new Int16Array(event.data.data));
-          // console log audio data length
+        if (event.data.type === 'audioData') {
+          audioBuffer.push(new Int16Array(event.data.data));
           console.log('Audio data length:', event.data.data.length);
+          console.log('Audio data sent at:', new Date().getTime());
           simliClient.sendAudioData(new Uint8Array(event.data.data.buffer));
         }
       };
@@ -184,26 +150,15 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
     // Save audio data every 10 seconds
     const saveInterval = setInterval(() => {
-      if (rawAudioBuffer.length > 0) {
-        const concatenatedRawAudio = new Float32Array(rawAudioBuffer.reduce((acc, curr) => acc + curr.length, 0));
+      if (audioBuffer.length > 0) {
+        const concatenatedAudio = new Int16Array(audioBuffer.reduce((acc, curr) => acc + curr.length, 0));
         let offset = 0;
-        for (const buffer of rawAudioBuffer) {
-          concatenatedRawAudio.set(buffer, offset);
+        for (const buffer of audioBuffer) {
+          concatenatedAudio.set(buffer, offset);
           offset += buffer.length;
         }
-        saveAudioToFile(concatenatedRawAudio, SAMPLE_RATE, 'raw_audio.wav');
-        rawAudioBuffer = [];
-      }
-
-      if (processedAudioBuffer.length > 0) {
-        const concatenatedProcessedAudio = new Int16Array(processedAudioBuffer.reduce((acc, curr) => acc + curr.length, 0));
-        let offset = 0;
-        for (const buffer of processedAudioBuffer) {
-          concatenatedProcessedAudio.set(buffer, offset);
-          offset += buffer.length;
-        }
-        saveAudioToFile(concatenatedProcessedAudio, TARGET_SAMPLE_RATE, 'processed_audio.wav');
-        processedAudioBuffer = [];
+        saveAudioToFile(concatenatedAudio, SAMPLE_RATE, 'audio.wav');
+        audioBuffer = [];
       }
     }, 10000);
 
