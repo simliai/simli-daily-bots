@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 
 // Dynamically import SimliIntegratedVoiceClientAudioWrapper with no SSR
 const SimliIntegratedVoiceClientAudioWrapper = dynamic(
@@ -50,7 +50,7 @@ export default function VoiceClientWrapper({ children }) {
                       content: [
                         {
                           type: "text",
-                          text: "You are a assistant called Daily Bot. You can ask me anything. Keep responses brief and legible. Your responses will converted to audio. Please do not include any special characters in your response other than '!' or '?'. Start by briefly introducing yourself."
+                          text: "You are Marie Curie. You have been revived to the year 2024 to educate young people about your life and work. You can ask me anything. Keep responses brief and legible. Your responses will converted to audio. Please do not include any special characters in your response other than '!' or '?'. Start by briefly introducing yourself. "
                         }
                       ]
                     }
