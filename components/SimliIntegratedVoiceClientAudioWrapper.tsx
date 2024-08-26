@@ -3,60 +3,9 @@ import { useVoiceClientMediaTrack } from "realtime-ai-react";
 import { SimliClient } from 'simli-client';
 
 const simli_faceid = '88109f93-40ce-45b8-b310-1473677ddde2';
-const BUFFER_SIZE = 6000*3;
-const SAMPLE_RATE = 48000;
+const BUFFER_SIZE = 24000;
+const SAMPLE_RATE = 22000;
 const TARGET_SAMPLE_RATE = 16000;
-
-// Helper function to save audio data to a file
-const saveAudioToFile = (audioData: Float32Array | Int16Array, sampleRate: number, filename: string) => {
-  const wav = new ArrayBuffer(44 + audioData.length * 2);
-  const view = new DataView(wav);
-
-  // Write WAV header
-  const writeString = (view: DataView, offset: number, string: string) => {
-    for (let i = 0; i < string.length; i++) {
-      view.setUint8(offset + i, string.charCodeAt(i));
-    }
-  };
-
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + audioData.length * 2, true);
-  writeString(view, 8, 'WAVE');
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(view, 36, 'data');
-  view.setUint32(40, audioData.length * 2, true);
-
-  // Write audio data
-  let index = 44;
-  for (let i = 0; i < audioData.length; i++) {
-    if (audioData instanceof Int16Array) {
-      view.setInt16(index, audioData[i], true);
-    } else {
-      view.setInt16(index, audioData[i] * 0x7FFF, true);
-    }
-    index += 2;
-  }
-
-  const blob = new Blob([view], { type: 'audio/wav' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 100);
-};
 
 const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   const botAudioRef = useRef<HTMLAudioElement>(null);
@@ -182,33 +131,7 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
     initializeAudioWorklet();
 
-    // Save audio data every 10 seconds
-    const saveInterval = setInterval(() => {
-      if (rawAudioBuffer.length > 0) {
-        const concatenatedRawAudio = new Float32Array(rawAudioBuffer.reduce((acc, curr) => acc + curr.length, 0));
-        let offset = 0;
-        for (const buffer of rawAudioBuffer) {
-          concatenatedRawAudio.set(buffer, offset);
-          offset += buffer.length;
-        }
-        saveAudioToFile(concatenatedRawAudio, SAMPLE_RATE, 'raw_audio.wav');
-        rawAudioBuffer = [];
-      }
-
-      if (processedAudioBuffer.length > 0) {
-        const concatenatedProcessedAudio = new Int16Array(processedAudioBuffer.reduce((acc, curr) => acc + curr.length, 0));
-        let offset = 0;
-        for (const buffer of processedAudioBuffer) {
-          concatenatedProcessedAudio.set(buffer, offset);
-          offset += buffer.length;
-        }
-        saveAudioToFile(concatenatedProcessedAudio, TARGET_SAMPLE_RATE, 'processed_audio.wav');
-        processedAudioBuffer = [];
-      }
-    }, 10000);
-
     return () => {
-      clearInterval(saveInterval);
       if (audioWorklet) {
         audioWorklet.disconnect();
       }
