@@ -18,59 +18,72 @@ export default function VoiceClientWrapper({ children }) {
         const { VoiceClientProvider } = await import('realtime-ai-react');
 
         const client = new DailyVoiceClient({
-          baseUrl: "/api/dailybotApi",
+          baseUrl: "/api/groqbotApi",
           enableMic: true,
-          enableCam: false,
-          services: {
-            tts: "cartesia",
-            llm: "anthropic"
-          },
-          config: [
-            {
-              service: "tts",
-              options: [
-                {
-                  name: "voice",
-                  value: "79a125e8-cd45-4c13-8a67-188112f4dd22",
-                },
-                {
-                  name: "sampleRate", 
-                  value: 16000
-                },
-              ]
-            },
-            {
-              service: "llm",
-              options: [
-                {
-                  name: "model",
-                  value: "claude-3-5-sonnet-20240620"
-                },
-                {
-                  name: "initial_messages",
-                  value: [
-                    {
-                      role: "user",
-                      content: [
-                        {
-                          type: "text",
-                          text: "You are a assistant called Daily Bot. You can ask me anything. Keep responses brief and legible. Your responses will converted to audio. Please do not include any special characters in your response other than '!' or '?'. Start by briefly introducing yourself."
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  name: "run_on_config",
-                  value: true
-                }
-              ]
-            }
-          ],
-          callbacks: {
+  enableCam: false,
+  services: {
+  tts: "cartesia",
+  llm: "groq"
+},
+  config: [
+  {
+    service: "vad",
+    options: [
+      {
+        name: "params",
+        value: {
+          stop_secs: 0.3
+        }
+      }
+    ]
+  },
+  {
+    service: "tts",
+    options: [
+      {
+        name: "voice",
+        value: "fb26447f-308b-471e-8b00-8e9f04284eb5"
+      }
+    ]
+  },
+  {
+    service: "llm",
+    options: [
+      {
+        name: "model",
+        value: "llama-3.1-8b-instant"
+      },
+      {
+        name: "initial_messages",
+        value: [
+          {
+            role: "system",
+            content: "You're everybody's least favorite uncle because you can't stop making terrible puns. Ask me about my freshman year of high school. Your responses will converted to audio. Please do not include any special characters in your response other than '!' or '?'."
+          }
+        ]
+      },
+      {
+        name: "run_on_config",
+        value: true
+      }
+    ]
+  }
+],
+          callbacks: { 
             onBotReady: () => {
               console.log("Bot is ready!");
             },
+            onMetrics: (metrics) => {
+              console.log("Metrics:", metrics);
+            },
+            onUserStartedSpeaking: () => {
+              //log the time
+              console.log("User started speaking at: ", new Date().toLocaleTimeString());
+            },
+            onUserStoppedSpeaking: () => {
+              //log the time
+              console.log("User stopped speaking at: ", new Date().toLocaleTimeString());
+            }
           }
         });
 
