@@ -38,16 +38,27 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   useEffect(() => {
     if (!botAudioRef.current || !botAudioTrack || !simliClient) return;
     
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+      sampleRate: 16000
+    });
     const sourceNode = audioContext.createMediaStreamSource(new MediaStream([botAudioTrack]));
     
     const scriptNode = audioContext.createScriptProcessor(1024*8, 1, 1);
     sourceNode.connect(scriptNode);
     scriptNode.connect(audioContext.destination);
 
+    const isSilent = (data: Float32Array, threshold = 0.01) => {
+      return !data.some(sample => Math.abs(sample) > threshold);
+    };
+
     scriptNode.onaudioprocess = (audioProcessingEvent) => {
       const inputBuffer = audioProcessingEvent.inputBuffer;
       const inputData = inputBuffer.getChannelData(0);
+      
+      if (isSilent(inputData)) {
+        console.log("Silence detected, skipping this buffer");
+        return;
+      }
       
       // Convert Float32Array to Int16Array
       const int16Data = new Int16Array(inputData.length);
@@ -56,10 +67,9 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
       }
 
       // Send the audio data to Simli
-      console.log("sendt ", int16Data.length, " bytes to simli");
-      console.log("send the data at time: ", audioContext.currentTime);
+      console.log("Sending", int16Data.length, "bytes to Simli");
+      console.log("Sending data at time:", audioContext.currentTime);
       simliClient.sendAudioData(new Uint8Array(int16Data.buffer));
-      console.log("buffer size is ", int16Data.length);
     };
 
     return () => {

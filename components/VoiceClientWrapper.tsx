@@ -18,12 +18,12 @@ export default function VoiceClientWrapper({ children }) {
         const { VoiceClientProvider } = await import('realtime-ai-react');
 
         const client = new DailyVoiceClient({
-          baseUrl: "/api/groqbotApi",
+          baseUrl: "/api/dailybotApi",
           enableMic: true,
   enableCam: false,
   services: {
   tts: "cartesia",
-  llm: "groq"
+  llm: "anthropic"
 },
   config: [
   {
@@ -42,8 +42,12 @@ export default function VoiceClientWrapper({ children }) {
     options: [
       {
         name: "voice",
-        value: "fb26447f-308b-471e-8b00-8e9f04284eb5"
-      }
+        value: "79a125e8-cd45-4c13-8a67-188112f4dd22",
+      },
+      {
+        name: "sampleRate", 
+        value: 16000
+      },
     ]
   },
   {
@@ -51,7 +55,7 @@ export default function VoiceClientWrapper({ children }) {
     options: [
       {
         name: "model",
-        value: "llama-3.1-8b-instant"
+        value: "claude-3-5-sonnet-20240620"
       },
       {
         name: "initial_messages",
