@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useVoiceClientMediaTrack } from "realtime-ai-react";
 import { SimliClient } from 'simli-client';
-
-const simli_faceid = '88109f93-40ce-45b8-b310-1473677ddde2';
+import { config } from './config'; // Import the config
 
 const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   const botAudioRef = useRef<HTMLAudioElement>(null);
@@ -15,7 +14,7 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
     if (videoRef.current && simliAudioRef.current) {
       const SimliConfig = {
         apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
-        faceID: simli_faceid,
+        faceID: config.faceId, // Use the faceId from config
         handleSilence: true,
         videoRef: videoRef,
         audioRef: simliAudioRef,

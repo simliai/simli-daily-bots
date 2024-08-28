@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { config } from './config'; // Import the config
 
 // Dynamically import SimliIntegratedVoiceClientAudioWrapper with no SSR
 const SimliIntegratedVoiceClientAudioWrapper = dynamic(
@@ -20,59 +21,65 @@ export default function VoiceClientWrapper({ children }) {
         const client = new DailyVoiceClient({
           baseUrl: "/api/dailybotApi",
           enableMic: true,
-  enableCam: false,
-  services: {
-  tts: "cartesia",
-  llm: "anthropic"
-},
-  config: [
-  {
-    service: "vad",
-    options: [
-      {
-        name: "params",
-        value: {
-          stop_secs: 0.3
-        }
-      }
-    ]
-  },
-  {
-    service: "tts",
-    options: [
-      {
-        name: "voice",
-        value: "79a125e8-cd45-4c13-8a67-188112f4dd22",
-      },
-      {
-        name: "sampleRate", 
-        value: 16000
-      },
-    ]
-  },
-  {
-    service: "llm",
-    options: [
-      {
-        name: "model",
-        value: "claude-3-5-sonnet-20240620"
-      },
-      {
-        name: "initial_messages",
-        value: [
-          {
-            role: "system",
-            content: "You're everybody's least favorite uncle because you can't stop making terrible puns. Ask me about my freshman year of high school. Your responses will converted to audio. Please do not include any special characters in your response other than '!' or '?'."
-          }
-        ]
-      },
-      {
-        name: "run_on_config",
-        value: true
-      }
-    ]
-  }
-],
+          enableCam: false,
+          services: {
+            tts: "cartesia",
+            llm: "anthropic"
+          },
+          config: [
+            {
+              service: "vad",
+              options: [
+                {
+                  name: "params",
+                  value: {
+                    stop_secs: 0.3
+                  }
+                }
+              ]
+            },
+            {
+              service: "tts",
+              options: [
+                {
+                  name: "voice",
+                  value: config.voiceId, // Use the voiceId from config
+                },
+                {
+                  name: "sampleRate", 
+                  value: 16000
+                },
+              ]
+            },
+            {
+              service: "llm",
+              options: [
+                {
+                  name: "model",
+                  value: "claude-3-5-sonnet-20240620"
+                },
+                {
+                  name: "initial_messages",
+                  value: [
+                    {
+                      role: "system",
+                      content: [
+                        {
+                          type: "text",
+                          text: config.initialPrompt // Use the initialPrompt from config
+                        }
+                      ]
+                      
+                    }
+                  ]
+                },
+                {
+                  name: "run_on_config",
+                  value: true
+                }
+              ]
+            }
+          ],
           callbacks: { 
             onBotReady: () => {
               console.log("Bot is ready!");
@@ -81,11 +88,9 @@ export default function VoiceClientWrapper({ children }) {
               console.log("Metrics:", metrics);
             },
             onUserStartedSpeaking: () => {
-              //log the time
               console.log("User started speaking at: ", new Date().toLocaleTimeString());
             },
             onUserStoppedSpeaking: () => {
-              //log the time
               console.log("User stopped speaking at: ", new Date().toLocaleTimeString());
             }
           }
@@ -100,6 +105,7 @@ export default function VoiceClientWrapper({ children }) {
     };
 
     initializeVoiceClient();
+    console.log("initial prompt", config.initialPrompt);
 
     return () => {
       if (voiceClient && voiceClient.client) {
