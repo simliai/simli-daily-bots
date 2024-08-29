@@ -18,7 +18,7 @@ export default function VoiceChat() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-200 flex flex-col items-center justify-center p-4">
       <main className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
-        <h1 className="text-4xl font-bold text-center mb-6 text-blue-600">Welcome to Voice Chat</h1>
+        <h1 className="text-4xl font-bold text-center mb-6 text-blue-600">Welcome to Simli Avatar Chat</h1>
         
         <div className="space-y-6">
           <div className="bg-blue-50 rounded-lg p-6">
@@ -27,7 +27,7 @@ export default function VoiceChat() {
               Start Talking
             </h2>
             <p className="text-gray-600 mb-4">
-              Click the button below to start your voice chat session. Our advanced AI is ready to listen and respond to your voice commands.
+              Click the button below to start your video call session.
             </p>
             <button 
               className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300"
@@ -47,22 +47,12 @@ export default function VoiceChat() {
               Engage in natural, flowing conversations with our AI. It understands context, nuance, and can assist with a wide range of topics.
             </p>
           </div>
-
-          <div className="bg-purple-50 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 flex items-center">
-              <User className="mr-2 text-purple-500" />
-              Personalized Experience
-            </h2>
-            <p className="text-gray-600">
-              Our AI adapts to your unique needs and preferences, providing a tailored experience for each user.
-            </p>
-          </div>
         </div>
 
         {isVoiceChatActive && (
           <VoiceClientWrapper>
             <div className="mt-8 text-center text-green-600 font-semibold">
-              Voice client is active. Start speaking!
+              Simli client is active. Start speaking!
             </div>
           </VoiceClientWrapper>
         )}
