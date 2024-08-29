@@ -23,64 +23,59 @@ export default function VoiceClientWrapper({ children }) {
           enableMic: true,
           enableCam: false,
           services: {
-            tts: "cartesia",
-            llm: "anthropic"
-          },
+          tts: "cartesia",
+          llm: "anthropic"
+        },
           config: [
-            {
-              service: "vad",
-              options: [
-                {
-                  name: "params",
-                  value: {
-                    stop_secs: 0.3
+          {
+            service: "vad",
+            options: [
+              {
+                name: "params",
+                value: {
+                  stop_secs: 0.3
+                }
+              }
+            ]
+          },
+          {
+            service: "tts",
+            options: [
+              {
+                name: "voice",
+                value: config.voiceId
+              }
+            ]
+          },
+          {
+            service: "llm",
+            options: [
+              {
+                name: "model",
+                value: "claude-3-5-sonnet-20240620"
+              },
+              {
+                name: "initial_messages",
+                value: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "text",
+                        text: config.initialPrompt
+                      }
+                    ]
                   }
-                }
-              ]
-            },
-            {
-              service: "tts",
-              options: [
-                {
-                  name: "voice",
-                  value: config.voiceId, // Use the voiceId from config
-                },
-                {
-                  name: "sampleRate", 
-                  value: 16000
-                },
-              ]
-            },
-            {
-              service: "llm",
-              options: [
-                {
-                  name: "model",
-                  value: "claude-3-5-sonnet-20240620"
-                },
-                {
-                  name: "initial_messages",
-                  value: [
-                    {
-                      role: "system",
-                      content: [
-                        {
-                          type: "text",
-                          text: config.initialPrompt // Use the initialPrompt from config
-                        }
-                      ]
-                      
-                    }
-                  ]
-                },
-                {
-                  name: "run_on_config",
-                  value: true
-                }
-              ]
-            }
-          ],
-          callbacks: { 
+                ]
+              },
+              {
+                name: "run_on_config",
+                value: true
+              }
+            ]
+          }
+        ],
+          callbacks: {
             onBotReady: () => {
               console.log("Bot is ready!");
             },
