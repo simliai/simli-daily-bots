@@ -34,7 +34,7 @@ export default function VoiceChat() {
               onClick={startVoiceChat}
               disabled={isVoiceChatActive}
             >
-              {isVoiceChatActive ? 'Voice Chat Active' : 'Start Voice Chat'}
+              {isVoiceChatActive ? 'Call started' : 'Start Avatar Call'}
             </button>
           </div>
 
