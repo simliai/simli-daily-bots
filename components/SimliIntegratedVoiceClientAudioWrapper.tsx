@@ -42,7 +42,7 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
     });
     const sourceNode = audioContext.createMediaStreamSource(new MediaStream([botAudioTrack]));
     
-    const scriptNode = audioContext.createScriptProcessor(1024*8, 1, 1);
+    const scriptNode = audioContext.createScriptProcessor(1024*16, 1, 1);
     sourceNode.connect(scriptNode);
     scriptNode.connect(audioContext.destination);
 
