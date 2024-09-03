@@ -14,7 +14,7 @@
     "react-dom": "18.2.0",
     "realtime-ai-daily": "^0.1.6",
     "realtime-ai-react": "^0.1.6",
-    "simli-client": "^1.0.1"
+    "simli-client": "^1.0.3"
   },
   "engines": {
     "node": ">=18"

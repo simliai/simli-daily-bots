@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useVoiceClientMediaTrack } from "realtime-ai-react";
-import { SimliClient } from 'simli-client';
-import { config } from './config'; // Import the config
+import { SimliClient } from "simli-client";
+import { config } from "./config"; // Import the config
 
 const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   const botAudioRef = useRef<HTMLAudioElement>(null);
@@ -36,38 +36,45 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
   useEffect(() => {
     if (!botAudioRef.current || !botAudioTrack || !simliClient) return;
-    
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
-      sampleRate: 16000
+
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)({
+      sampleRate: 16000,
     });
-    const sourceNode = audioContext.createMediaStreamSource(new MediaStream([botAudioTrack]));
-    
-    const scriptNode = audioContext.createScriptProcessor(1024*16, 1, 1);
+    const sourceNode = audioContext.createMediaStreamSource(
+      new MediaStream([botAudioTrack])
+    );
+
+    const scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
     sourceNode.connect(scriptNode);
     scriptNode.connect(audioContext.destination);
 
     const isSilent = (data: Float32Array, threshold = 0.01) => {
-      return !data.some(sample => Math.abs(sample) > threshold);
+      return !data.some((sample) => Math.abs(sample) > threshold);
     };
-
+    let previousTime = performance.now();
     scriptNode.onaudioprocess = (audioProcessingEvent) => {
       const inputBuffer = audioProcessingEvent.inputBuffer;
       const inputData = inputBuffer.getChannelData(0);
-      
+
       if (isSilent(inputData)) {
         console.log("Silence detected, skipping this buffer");
         return;
       }
-      
+
       // Convert Float32Array to Int16Array
       const int16Data = new Int16Array(inputData.length);
       for (let i = 0; i < inputData.length; i++) {
-        int16Data[i] = Math.max(-32768, Math.min(32767, Math.round(inputData[i] * 32767)));
+        int16Data[i] = Math.max(
+          -32768,
+          Math.min(32767, Math.round(inputData[i] * 32767))
+        );
       }
 
       // Send the audio data to Simli
       console.log("Sending", int16Data.length, "bytes to Simli");
-      console.log("Sending data at time:", audioContext.currentTime);
+      console.log("Sending data at time:", performance.now() - previousTime);
+      previousTime = performance.now();
       simliClient.sendAudioData(new Uint8Array(int16Data.buffer));
     };
 
@@ -80,9 +87,15 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
   return (
     <div className="relative w-full aspect-video">
-      <video ref={videoRef} id="simli_video" autoPlay playsInline className="w-full h-full object-cover"></video>
+      <video
+        ref={videoRef}
+        id="simli_video"
+        autoPlay
+        playsInline
+        className="w-full h-full object-cover"
+      ></video>
       <audio ref={simliAudioRef} id="simli_audio" autoPlay></audio>
-      <audio ref={botAudioRef} style={{ display: 'none' }} />
+      <audio ref={botAudioRef} style={{ display: "none" }} />
     </div>
   );
 };
