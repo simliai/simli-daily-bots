@@ -7,20 +7,10 @@ Create a `.env.local` file in the root of the project and add the following envi
 
 ```bash
 SIMLI_API_KEY=your-simli-api-key
-GROQ_API_KEY=your-groq-api-key
-DEEPGRAM_API_KEY=your-deepgram-api-key
-ELEVENLABS_API_KEY=your-elevenlabs-api-key
+DAILYBOTS_API_KEY=your_dailybots_api_key
 ```
 
-If you want to try Simli but don't have API access to these third parties, ask in Discord and we can help you out with that. 
-
-### Alternative STT, TTS and LLM providers 
-You can of course replace Deepgram and Elevenlabs with AI services with your own preference, or even build your own.
-The only requirement for Simli to work is that audio is sent using PCM16 format and 16KHz sample rate. If you're having trouble getting nice audio, feel free to ask for help in Discord.  
-
-
-To run the back-end and the app, run the following command:
-
+To run the app, run the following command:
 
 
 ```bash
@@ -28,9 +18,9 @@ npm run start
 ```
 
 ### Characters
-You'll start with Einstein but you can add more characters by [creating your own](simli.com) or finding one that you like in the [docs](docs.simli.com). 
+You can swap out the character by [creating your own](simli.com) or finding one that you like in the [docs](docs.simli.com). 
 
-![alt text](images/image.png) ![alt text](images/image-4.png) ![alt text](images/image-2.png) ![alt text](images/image-3.png)
+![alt text](media/image.png) ![alt text](media/image-4.png) ![alt text](media/image-2.png) ![alt text](media/image-3.png)
 
 
 ## Deploy on Vercel
