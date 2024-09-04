@@ -60,13 +60,14 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
             this.buffer = new Int16Array(${3000});
             this.bufferIndex = 0;
             this.prev = Date.now();
+            this.apiPrev = Date.now();
             this.first = true;
           }
 
           process(inputs, outputs, parameters) {
             const input = inputs[0];
             const inputChannel = input[0];
-            console.log('Audio data received in processor at', Date.now() - this.prev);
+            // console.log('Audio data received in processor at', Date.now() - this.prev);
             this.prev = Date.now();
             console.log(inputChannel.length);
             if (inputChannel) {
@@ -80,6 +81,9 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
                   this.first = false;
                   this.prev = Date.now();
                   this.port.postMessage({type: 'audioData', data: this.buffer.slice(0, this.bufferIndex)});
+                  console.log('Audio data sent in processor at:', Date.now() );
+                  console.log('Audio data sent at:', Date.now() - this.apiPrev);
+                  this.apiPrev = Date.now();
                   this.bufferIndex = 0;
                 }
               }
