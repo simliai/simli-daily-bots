@@ -37,7 +37,7 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   useEffect(() => {
     if (!botAudioRef.current || !botAudioTrack || !simliClient) return;
 
-    const audioContext = new (window.AudioContext ||
+    const audioContext: AudioContext = new (window.AudioContext ||
       (window as any).webkitAudioContext)({
       sampleRate: 16000,
     });
@@ -45,41 +45,77 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
       new MediaStream([botAudioTrack])
     );
 
-    const scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
-    sourceNode.connect(scriptNode);
-    scriptNode.connect(audioContext.destination);
+    let audioWorklet: AudioWorkletNode;
+    let audioBuffer: Int16Array[] = [];
 
-    const isSilent = (data: Float32Array, threshold = 0.01) => {
-      return !data.some((sample) => Math.abs(sample) > threshold);
+    const initializeAudioWorklet = async () => {
+      await audioContext.audioWorklet.addModule(
+        URL.createObjectURL(
+          new Blob(
+            [
+              `
+        class AudioProcessor extends AudioWorkletProcessor {
+          constructor() {
+            super();
+            this.buffer = new Int16Array(${3000});
+            this.bufferIndex = 0;
+            this.prev = Date.now();
+            this.first = true;
+          }
+
+          process(inputs, outputs, parameters) {
+            const input = inputs[0];
+            const inputChannel = input[0];
+            console.log('Audio data received in processor at', Date.now() - this.prev);
+            this.prev = Date.now();
+            console.log(inputChannel.length);
+            if (inputChannel) {
+              for (let i = 0; i < inputChannel.length; i++) {
+                this.buffer[this.bufferIndex] = Math.max(-32768, Math.min(32767, Math.round(inputChannel[i] * 32767)));
+                this.bufferIndex++;
+                
+                if (this.bufferIndex === this.buffer.length || ((Date.now() - this.prev > ${
+                  (3000 / 16000) * 1000
+                }) && ! this.first)){
+                  this.first = false;
+                  this.prev = Date.now();
+                  this.port.postMessage({type: 'audioData', data: this.buffer.slice(0, this.bufferIndex)});
+                  this.bufferIndex = 0;
+                }
+              }
+            }
+            return true;
+          }
+        }
+
+        registerProcessor('audio-processor', AudioProcessor);
+      `,
+            ],
+            { type: "application/javascript" }
+          )
+        )
+      );
+
+      audioWorklet = new AudioWorkletNode(audioContext, "audio-processor");
+      sourceNode.connect(audioWorklet);
+      // audioWorklet.connect(audioContext.destination);
+      let previous = performance.now();
+      audioWorklet.port.onmessage = (event) => {
+        if (event.data.type === "audioData") {
+          console.log("Audio data received in port at", Date.now());
+          audioBuffer.push(new Int16Array(event.data.data));
+          console.log("Audio data length:", event.data.data.length);
+          simliClient.sendAudioData(new Uint8Array(event.data.data.buffer));
+          console.log("Audio data sent at:", performance.now() - previous);
+          previous = performance.now();
+        }
+      };
     };
-    let previousTime = performance.now();
-    scriptNode.onaudioprocess = (audioProcessingEvent) => {
-      const inputBuffer = audioProcessingEvent.inputBuffer;
-      const inputData = inputBuffer.getChannelData(0);
 
-      if (isSilent(inputData)) {
-        console.log("Silence detected, skipping this buffer");
-        return;
-      }
-
-      // Convert Float32Array to Int16Array
-      const int16Data = new Int16Array(inputData.length);
-      for (let i = 0; i < inputData.length; i++) {
-        int16Data[i] = Math.max(
-          -32768,
-          Math.min(32767, Math.round(inputData[i] * 32767))
-        );
-      }
-
-      // Send the audio data to Simli
-      console.log("Sending", int16Data.length, "bytes to Simli");
-      console.log("Sending data at time:", performance.now() - previousTime);
-      previousTime = performance.now();
-      simliClient.sendAudioData(new Uint8Array(int16Data.buffer));
-    };
+    initializeAudioWorklet();
 
     return () => {
-      scriptNode.disconnect();
+      audioWorklet.disconnect();
       sourceNode.disconnect();
       audioContext.close();
     };
