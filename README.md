@@ -1,6 +1,6 @@
 # Create Simli App
 This starter is an example of how to create a composable Simli interaction that runs in a Next.js app.
-The project consists of a Next.js app that uses the Simli SDK (`simli-client`) and dailybots(https://docs.dailybots.ai/introduction) a voice agent API, to construct a video agent interaction.
+The project consists of a Next.js app that uses the Simli SDK (`simli-client`) and [dailybots](https://docs.dailybots.ai) a voice agent API, to construct a video agent interaction.
 
 ### Start by putting in environment variables
 Create a `.env.local` file in the root of the project and add the following environment variables:
