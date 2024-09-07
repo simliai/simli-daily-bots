@@ -21,7 +21,7 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
       const SimliConfig = {
         apiKey,
         faceID: config.faceId, // Use the faceId from config
-        handleSilence: true,
+        handleSilence: false,
         videoRef: videoRef,
         audioRef: simliAudioRef,
       };
@@ -63,10 +63,10 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
       const inputBuffer = audioProcessingEvent.inputBuffer;
       const inputData = inputBuffer.getChannelData(0);
 
-      if (isSilent(inputData)) {
-        console.log("Silence detected, skipping this buffer");
-        return;
-      }
+      // if (isSilent(inputData)) {
+      //   console.log("Silence detected, skipping this buffer");
+      //   return;
+      // }
 
       // Convert Float32Array to Int16Array
       const int16Data = new Int16Array(inputData.length);
