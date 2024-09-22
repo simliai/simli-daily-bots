@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useVoiceClientMediaTrack } from "realtime-ai-react";
-import { SimliClient } from "simli-client";
+import { SimliClient } from "../SimliClient";
 import { config } from "./config"; // Import the config
 
 const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
@@ -43,52 +43,7 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
   useEffect(() => {
     if (!botAudioRef.current || !botAudioTrack || !simliClient) return;
 
-    const audioContext = new (window.AudioContext ||
-      (window as any).webkitAudioContext)({
-      sampleRate: 16000,
-    });
-    const sourceNode = audioContext.createMediaStreamSource(
-      new MediaStream([botAudioTrack])
-    );
-
-    const scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
-    sourceNode.connect(scriptNode);
-    scriptNode.connect(audioContext.destination);
-
-    const isSilent = (data: Float32Array, threshold = 0.01) => {
-      return !data.some((sample) => Math.abs(sample) > threshold);
-    };
-    let previousTime = performance.now();
-    scriptNode.onaudioprocess = (audioProcessingEvent) => {
-      const inputBuffer = audioProcessingEvent.inputBuffer;
-      const inputData = inputBuffer.getChannelData(0);
-
-      // if (isSilent(inputData)) {
-      //   console.log("Silence detected, skipping this buffer");
-      //   return;
-      // }
-
-      // Convert Float32Array to Int16Array
-      const int16Data = new Int16Array(inputData.length);
-      for (let i = 0; i < inputData.length; i++) {
-        int16Data[i] = Math.max(
-          -32768,
-          Math.min(32767, Math.round(inputData[i] * 32767))
-        );
-      }
-
-      // Send the audio data to Simli
-      console.log("Sending", int16Data.length, "bytes to Simli");
-      console.log("Sending data at time:", performance.now() - previousTime);
-      previousTime = performance.now();
-      simliClient.sendAudioData(new Uint8Array(int16Data.buffer));
-    };
-
-    return () => {
-      scriptNode.disconnect();
-      sourceNode.disconnect();
-      audioContext.close();
-    };
+    simliClient.listenToMediastreamTrack(botAudioTrack)
   }, [botAudioTrack, simliClient]);
 
   return (
