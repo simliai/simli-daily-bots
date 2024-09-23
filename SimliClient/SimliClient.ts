@@ -230,7 +230,7 @@ export class SimliClient extends EventEmitter {
       const localDescription = this.pc.localDescription;
       if (!localDescription) return;
 
-      const response = await fetch("http://127.0.0.1:8892/StartWebRTCSession", {
+      const response = await fetch("https://api.simli.ai/StartWebRTCSession", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
