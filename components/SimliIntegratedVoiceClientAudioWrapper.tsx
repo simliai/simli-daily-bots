@@ -1,17 +1,28 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { useVoiceClientMediaTrack } from "realtime-ai-react";
 import { SimliClient } from "../SimliClient";
 import { config } from "./config"; // Import the config
 
-const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
-  const botAudioRef = useRef<HTMLAudioElement>(null);
+export interface SimliIntegratedVoiceClientAudioWrapperProps {
+  listenToTrack: (botTrack: MediaStreamTrack) => void;
+}
+
+const SimliIntegratedVoiceClientAudioWrapper = forwardRef<SimliIntegratedVoiceClientAudioWrapperProps, {}>((props, ref) => {
+  // const botAudioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const simliAudioRef = useRef<HTMLAudioElement>(null);
   const botAudioTrack = useVoiceClientMediaTrack("audio", "bot");
-  const [simliClient, setSimliClient] = useState<SimliClient | null>(null);
+  // const [simliClient, setSimliClient] = useState<SimliClient | null>(null);
+  const simliClient = useRef<SimliClient | null>(null);
+  const isInitialized = useRef(false);
+
 
   useEffect(() => {
+    if (isInitialized.current) {
+      return;
+    }
     if (videoRef.current && simliAudioRef.current) {
+      isInitialized.current = true;
       const apiKey = process.env.NEXT_PUBLIC_SIMLI_API_KEY;
       if (!apiKey) {
         console.error("NEXT_PUBLIC_SIMLI_API_KEY is not defined");
@@ -28,24 +39,36 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
       const client = new SimliClient();
       client.Initialize(SimliConfig);
-      setSimliClient(client);
+      simliClient.current = client;
+      // setSimliClient(client);
 
       client.start();
     }
 
     return () => {
-      if (simliClient) {
-        simliClient.close();
+      if (simliClient.current) {
+        console.log("CLOSINGGG")
+        simliClient.current.close();
+        isInitialized.current = false;
+        simliClient.current = null;
       }
     };
   }, []);
 
-  useEffect(() => {
-    if (!botAudioRef.current || !botAudioTrack || !simliClient) return;
+  // useEffect(() => {
+  //   console.log("botAudioTrack", botAudioTrack);
+  //   if (!botAudioTrack || !simliClient) return;
 
-    simliClient.listenToMediastreamTrack(botAudioTrack)
-  }, [botAudioTrack, simliClient]);
+  //   simliClient.current?.listenToMediastreamTrack(botAudioTrack)
+  // }, [botAudioTrack]);
 
+  const listenToTrack = (botTrack: MediaStreamTrack) => {
+    simliClient.current?.listenToMediastreamTrack(botTrack)
+  }
+  useImperativeHandle(ref, () => ({
+    listenToTrack,
+  }));
+  // useImperativeHandle()
   return (
     <div className="relative w-full aspect-video">
       <video
@@ -56,9 +79,9 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
         className="w-full h-full"
       ></video>
       <audio ref={simliAudioRef} id="simli_audio" autoPlay></audio>
-      <audio ref={botAudioRef} style={{ display: "none" }} />
+      {/* <audio ref={botAudioRef} style={{ display: "none" }} /> */}
     </div>
   );
-};
+});
 
 export default SimliIntegratedVoiceClientAudioWrapper;
