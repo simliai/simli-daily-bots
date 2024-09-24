@@ -11,6 +11,7 @@ export async function POST(request: Request) {
       config,
       api_keys: {
         openai: process.env.OPENAI_API_KEY,
+        carteisia: process.env.CARTEISIA_API_KEY,
       },
     };
 
