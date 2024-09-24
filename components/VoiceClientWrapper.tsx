@@ -31,9 +31,10 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
           services: {
             stt: "deepgram",
             tts: "cartesia",
-            llm: "anthropic"
+            llm: "openai"
           },
           config: [
+
             {
               service: "vad",
               options: [
@@ -67,7 +68,7 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
               options: [
                 {
                   name: "model",
-                  value: "claude-3-5-sonnet-20240620"
+                  value: "gpt-4o-mini"
                 },
                 {
                   name: "initial_messages",
@@ -86,7 +87,8 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
                 {
                   name: "run_on_config",
                   value: true
-                }
+                },
+
               ]
             },
             {
@@ -105,6 +107,7 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
           ],
           callbacks: {
             onBotReady: () => console.log("Bot is ready!"),
+            onError: (error) => console.error("Error:", error),
             onMetrics: (metrics) => console.log("Metrics:", metrics),
             onUserStartedSpeaking: () => console.log("User started speaking at: ", new Date().toLocaleTimeString()),
             onUserStoppedSpeaking: () => console.log("User stopped speaking at: ", new Date().toLocaleTimeString())
