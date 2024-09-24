@@ -74,7 +74,7 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
                   name: "initial_messages",
                   value: [
                     {
-                      role: "user",
+                      role: "system",
                       content: [
                         {
                           type: "text",
