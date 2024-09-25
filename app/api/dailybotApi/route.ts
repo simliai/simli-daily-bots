@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +9,10 @@ export async function POST(request: Request) {
       max_duration: 600,
       services,
       config,
+      api_keys: {
+        openai: process.env.OPENAI_API_KEY,
+        carteisia: process.env.CARTEISIA_API_KEY,
+      },
     };
 
     const response = await fetch("https://api.daily.co/v1/bots/start", {

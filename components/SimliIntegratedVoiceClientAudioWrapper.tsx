@@ -1,17 +1,28 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { useVoiceClientMediaTrack } from "realtime-ai-react";
-import { SimliClient } from "simli-client";
+import { SimliClient } from "../SimliClient";
 import { config } from "./config"; // Import the config
 
-const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
-  const botAudioRef = useRef<HTMLAudioElement>(null);
+export interface SimliIntegratedVoiceClientAudioWrapperProps {
+  listenToTrack: (botTrack: MediaStreamTrack) => void;
+}
+
+const SimliIntegratedVoiceClientAudioWrapper = forwardRef<SimliIntegratedVoiceClientAudioWrapperProps, {}>((props, ref) => {
+  // const botAudioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const simliAudioRef = useRef<HTMLAudioElement>(null);
   const botAudioTrack = useVoiceClientMediaTrack("audio", "bot");
-  const [simliClient, setSimliClient] = useState<SimliClient | null>(null);
+  // const [simliClient, setSimliClient] = useState<SimliClient | null>(null);
+  const simliClient = useRef<SimliClient | null>(null);
+  const isInitialized = useRef(false);
+
 
   useEffect(() => {
+    if (isInitialized.current) {
+      return;
+    }
     if (videoRef.current && simliAudioRef.current) {
+      isInitialized.current = true;
       const apiKey = process.env.NEXT_PUBLIC_SIMLI_API_KEY;
       if (!apiKey) {
         console.error("NEXT_PUBLIC_SIMLI_API_KEY is not defined");
@@ -28,69 +39,36 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
 
       const client = new SimliClient();
       client.Initialize(SimliConfig);
-      setSimliClient(client);
+      simliClient.current = client;
+      // setSimliClient(client);
 
       client.start();
     }
 
     return () => {
-      if (simliClient) {
-        simliClient.close();
+      if (simliClient.current) {
+        console.log("CLOSINGGG")
+        simliClient.current.close();
+        isInitialized.current = false;
+        simliClient.current = null;
       }
     };
   }, []);
 
-  useEffect(() => {
-    if (!botAudioRef.current || !botAudioTrack || !simliClient) return;
+  // useEffect(() => {
+  //   console.log("botAudioTrack", botAudioTrack);
+  //   if (!botAudioTrack || !simliClient) return;
 
-    const audioContext = new (window.AudioContext ||
-      (window as any).webkitAudioContext)({
-      sampleRate: 16000,
-    });
-    const sourceNode = audioContext.createMediaStreamSource(
-      new MediaStream([botAudioTrack])
-    );
+  //   simliClient.current?.listenToMediastreamTrack(botAudioTrack)
+  // }, [botAudioTrack]);
 
-    const scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
-    sourceNode.connect(scriptNode);
-    scriptNode.connect(audioContext.destination);
-
-    const isSilent = (data: Float32Array, threshold = 0.01) => {
-      return !data.some((sample) => Math.abs(sample) > threshold);
-    };
-    let previousTime = performance.now();
-    scriptNode.onaudioprocess = (audioProcessingEvent) => {
-      const inputBuffer = audioProcessingEvent.inputBuffer;
-      const inputData = inputBuffer.getChannelData(0);
-
-      // if (isSilent(inputData)) {
-      //   console.log("Silence detected, skipping this buffer");
-      //   return;
-      // }
-
-      // Convert Float32Array to Int16Array
-      const int16Data = new Int16Array(inputData.length);
-      for (let i = 0; i < inputData.length; i++) {
-        int16Data[i] = Math.max(
-          -32768,
-          Math.min(32767, Math.round(inputData[i] * 32767))
-        );
-      }
-
-      // Send the audio data to Simli
-      console.log("Sending", int16Data.length, "bytes to Simli");
-      console.log("Sending data at time:", performance.now() - previousTime);
-      previousTime = performance.now();
-      simliClient.sendAudioData(new Uint8Array(int16Data.buffer));
-    };
-
-    return () => {
-      scriptNode.disconnect();
-      sourceNode.disconnect();
-      audioContext.close();
-    };
-  }, [botAudioTrack, simliClient]);
-
+  const listenToTrack = (botTrack: MediaStreamTrack) => {
+    simliClient.current?.listenToMediastreamTrack(botTrack)
+  }
+  useImperativeHandle(ref, () => ({
+    listenToTrack,
+  }));
+  // useImperativeHandle()
   return (
     <div className="relative w-full aspect-video">
       <video
@@ -101,9 +79,9 @@ const SimliIntegratedVoiceClientAudioWrapper: React.FC = () => {
         className="w-full h-full"
       ></video>
       <audio ref={simliAudioRef} id="simli_audio" autoPlay></audio>
-      <audio ref={botAudioRef} style={{ display: "none" }} />
+      {/* <audio ref={botAudioRef} style={{ display: "none" }} /> */}
     </div>
   );
-};
+});
 
 export default SimliIntegratedVoiceClientAudioWrapper;

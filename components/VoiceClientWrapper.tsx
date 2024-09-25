@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { config } from './config'; // Make sure this path is correct
+import SimliIntegratedVoiceClientAudioWrapper, { SimliIntegratedVoiceClientAudioWrapperProps } from './SimliIntegratedVoiceClientAudioWrapper';
+import { useVoiceClientMediaTrack } from "realtime-ai-react";
 
-const SimliIntegratedVoiceClientAudioWrapper = dynamic(
-  () => import('./SimliIntegratedVoiceClientAudioWrapper'),
-  { ssr: false }
-);
+// const SimliIntegratedVoiceClientAudioWrapper, { SimliIntegratedVoiceClientAudioWrapperProps } = dynamic(
+//   () => import('./SimliIntegratedVoiceClientAudioWrapper'),
+//   { ssr: false }
+// );
 
 interface VoiceClientWrapperProps {
   children?: React.ReactNode;
@@ -15,7 +17,7 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
   const [voiceClient, setVoiceClient] = useState<{ client: any; VoiceClientProvider: any } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-
+  const simliComponentRef = useRef<SimliIntegratedVoiceClientAudioWrapperProps>(null);
   useEffect(() => {
     const initializeVoiceClient = async () => {
       try {
@@ -27,90 +29,95 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
           enableMic: true,
           enableCam: false,
           services: {
-          stt: "deepgram",
-          tts: "cartesia",
-          llm: "anthropic"
-        },
+            stt: "deepgram",
+            tts: "cartesia",
+            llm: "openai"
+          },
           config: [
-          {
-            service: "vad",
-            options: [
-              {
-                name: "params",
-                value: {
-                  stop_secs: 0.3
-                }
-              }
-            ]
-          },
-          {
-            service: "tts",
-            options: [
-              {
-                name: "voice",
-                value: config.voiceId
-              },
-              {
-                name: "model",
-                value: "sonic-english"
-              },
-              {
-                name: "language",
-                value: "en"
-              }
-            ]
-          },
-          {
-            service: "llm",
-            options: [
-              {
-                name: "model",
-                value: "claude-3-5-sonnet-20240620"
-              },
-              {
-                name: "initial_messages",
-                value: [
-                  {
-                    role: "user",
-                    content: [
-                      {
-                        type: "text",
-                        text: config.initialPrompt
-                      }
-                    ]
+
+            {
+              service: "vad",
+              options: [
+                {
+                  name: "params",
+                  value: {
+                    stop_secs: 0.3
                   }
-                ]
-              },
-              {
-                name: "run_on_config",
-                value: true
-              }
-            ]
-          },
-          {
-            service: "stt",
-            options: [
-              {
-                name: "model",
-                value: "nova-2-conversationalai"
-              },
-              {
-                name: "language",
-                value: "en"
-              }
-            ]
-          }
-        ],
+                }
+              ]
+            },
+            {
+              service: "tts",
+              options: [
+                {
+                  name: "voice",
+                  value: config.voiceId
+                },
+                {
+                  name: "model",
+                  value: "sonic-english"
+                },
+                {
+                  name: "language",
+                  value: "en"
+                }
+              ]
+            },
+            {
+              service: "llm",
+              options: [
+                {
+                  name: "model",
+                  value: "gpt-4o-mini"
+                },
+                {
+                  name: "initial_messages",
+                  value: [
+                    {
+                      role: "system",
+                      content: [
+                        {
+                          type: "text",
+                          text: config.initialPrompt
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  name: "run_on_config",
+                  value: true
+                },
+
+              ]
+            },
+            {
+              service: "stt",
+              options: [
+                {
+                  name: "model",
+                  value: "nova-2-conversationalai"
+                },
+                {
+                  name: "language",
+                  value: "en"
+                }
+              ]
+            }
+          ],
           callbacks: {
             onBotReady: () => console.log("Bot is ready!"),
+            onError: (error) => console.error("Error:", error),
             onMetrics: (metrics) => console.log("Metrics:", metrics),
             onUserStartedSpeaking: () => console.log("User started speaking at: ", new Date().toLocaleTimeString()),
             onUserStoppedSpeaking: () => console.log("User stopped speaking at: ", new Date().toLocaleTimeString())
           }
         });
 
-        await client.start();
         setVoiceClient({ client, VoiceClientProvider });
+        await client.start();
+        simliComponentRef.current?.listenToTrack(client.tracks().bot.audio);
+        // simliComponentRef.current?.listenToTrack();
       } catch (e) {
         console.error("Error initializing voice client:", e);
         setError(e instanceof Error ? e.message : "Unknown error occurred");
@@ -138,10 +145,15 @@ const VoiceClientWrapper: React.FC<VoiceClientWrapperProps> = ({ children }) => 
   const { client, VoiceClientProvider } = voiceClient;
 
   return (
-    <VoiceClientProvider voiceClient={client}>
-      {children}
-      <SimliIntegratedVoiceClientAudioWrapper />
-    </VoiceClientProvider>
+    <>
+      <VoiceClientProvider voiceClient={client}>
+        {children}
+        <>
+
+        </>
+      </VoiceClientProvider>
+      <SimliIntegratedVoiceClientAudioWrapper ref={simliComponentRef} />
+    </>
   );
 };
 

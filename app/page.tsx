@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import SimliHeaderLogo from './Logo';
 import Navbar from './Navbar';
@@ -30,10 +30,14 @@ const Demo: React.FC = () => {
     setIsInteracting(false);
   };
 
+  // useEffect(() => {
+  //   console.log("DEMO RELOADED");
+  // }, []);
+
   return (
     <div className="bg-black min-h-screen flex flex-col items-center font-mono text-white p-8">
-      <SimliHeaderLogo/>
-      <Navbar/>
+      <SimliHeaderLogo />
+      <Navbar />
       <div className="w-full max-w-2xl flex flex-col items-center gap-6">
         <div className="bg-effect15White p-6 rounded-xl w-full">
           <h2 className="text-2xl font-bold mb-4"></h2>
